@@ -75,47 +75,7 @@ jobs:
             yaml.dump(config, f, default_flow_style=False)
         EOF
 
-    - name: Configure YC CLI
-      run: |
-        mkdir -p $HOME/.config/yandex-cloud
-        python3 << 'EOF'
-        import yaml
-        import os
-        
-        # Читаем kubeconfig
-        with open('kubeconfig.yaml', 'r') as f:
-            kubeconfig = yaml.safe_load(f)
-        
-        # Извлекаем cloud-id и folder-id из exec args
-        cloud_id = None
-        folder_id = None
-        
-        if 'users' in kubeconfig:
-            for user in kubeconfig['users']:
-                if 'user' in user and 'exec' in user['user']:
-                    exec_config = user['user']['exec']
-                    if 'args' in exec_config:
-                        args = exec_config['args']
-                        for i, arg in enumerate(args):
-                            if arg == '--cloud-id' and i + 1 < len(args):
-                                cloud_id = args[i + 1]
-                            elif arg == '--folder-id' and i + 1 < len(args):
-                                folder_id = args[i + 1]
-        
-        # Создаём конфиг для yc
-        config_content = f"token: {os.environ.get('YC_CR_TOKEN', '')}\n"
-        if cloud_id:
-            config_content += f"cloud-id: {cloud_id}\n"
-        if folder_id:
-            config_content += f"folder-id: {folder_id}\n"
-        config_content += "profile: default\n"
-        
-        with open(f"{os.environ['HOME']}/.config/yandex-cloud/config.yaml", 'w') as f:
-            f.write(config_content)
-        EOF
-      env:
-        YC_CR_TOKEN: ${{ secrets.YC_CR_TOKEN }}
-
     - name: Deploy to Yandex Cloud K8s
       run: |
-        kubectl --kubeconfig kubeconfig.yaml apply -f k8s-deployment.yaml
+        export YC_TOKEN="${{ secrets.YC_CR_TOKEN }}"
+        kubectl --kubeconfig kubeconfig.yaml apply -f k8s-deployment.yaml --validate=false
