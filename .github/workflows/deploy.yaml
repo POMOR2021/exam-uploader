@@ -27,6 +27,13 @@ jobs:
       run: |
         dotnet publish -c Release -o out
 
+    - name: Debug secrets
+      run: |
+        echo "CR_REGISTRY length: ${#CR_REGISTRY}"
+        echo "CR_REPO length: ${#CR_REPO}"
+        if [ -z "$CR_REGISTRY" ]; then echo "ERROR: CR_REGISTRY is empty!"; fi
+        if [ -z "$CR_REPO" ]; then echo "ERROR: CR_REPO is empty!"; fi
+
     - name: Build Docker image
       run: |
         docker build -t $CR_REGISTRY/$CR_REPO/$IMAGE_NAME:latest .
