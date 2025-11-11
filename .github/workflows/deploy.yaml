@@ -53,10 +53,27 @@ jobs:
 
     - name: Set up Kubeconfig
       run: |
+        pip3 install pyyaml
         echo "$KUBE_CONFIG" > kubeconfig.yaml
-        sed -i 's|C:\\\\Users\\\\[^/]*\\\\yandex-cloud\\\\bin\\\\yc.exe|yc|g' kubeconfig.yaml
-        sed -i 's|C:/Users/[^/]*/yandex-cloud/bin/yc.exe|yc|g' kubeconfig.yaml
-        sed -i 's|command: yc.exe|command: yc|g' kubeconfig.yaml
+        python3 << 'EOF'
+        import yaml
+        import sys
+        
+        with open('kubeconfig.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+        
+        if 'users' in config:
+            for user in config['users']:
+                if 'user' in user and 'exec' in user['user']:
+                    exec_config = user['user']['exec']
+                    if 'command' in exec_config:
+                        # Заменяем любой путь к yc.exe на просто yc
+                        if 'yc.exe' in exec_config['command'] or 'yc' in exec_config['command']:
+                            exec_config['command'] = 'yc'
+        
+        with open('kubeconfig.yaml', 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+        EOF
 
     - name: Deploy to Yandex Cloud K8s
       run: |
