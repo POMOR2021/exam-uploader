@@ -1,0 +1,23 @@
+﻿@model List<ImageUploaderApp.Models.ImageMeta>
+@{
+    ViewData["Title"] = "Uploaded Images";
+}
+<h2>Uploaded Images</h2>
+<a asp-action="Upload">Upload New Image</a>
+<table>
+    <thead>
+        <tr>
+            <th>Image</th><th>File Name</th><th>Upload Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var img in Model)
+        {
+            <tr>
+                <td><img src="@img.Url" alt="@img.FileName" width="100"/></td>
+                <td>@img.FileName</td>
+                <td>@img.UploadDate.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

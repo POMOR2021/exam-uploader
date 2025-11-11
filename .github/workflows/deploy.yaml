@@ -1,0 +1,47 @@
+name: CI/CD to Yandex Cloud
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      CR_REGISTRY: ${{ secrets.YC_CR_REGISTRY }}
+      CR_REPO: ${{ secrets.YC_CR_REPO }}
+      IMAGE_NAME: image-uploader
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Build & Publish
+      run: |
+        dotnet publish -c Release -o out
+
+    - name: Build Docker image
+      run: |
+        docker build -t $CR_REGISTRY/$CR_REPO/$IMAGE_NAME:latest .
+    
+    - name: Login to YCR
+      run: |
+        echo ${{ secrets.YC_CR_TOKEN }} | docker login --username oauth --password-stdin $CR_REGISTRY
+
+    - name: Push image
+      run: |
+        docker push $CR_REGISTRY/$CR_REPO/$IMAGE_NAME:latest
+
+    - name: Set up Kubeconfig
+      run: echo "$KUBE_CONFIG" > kubeconfig.yaml
+
+    - name: Deploy to Yandex Cloud K8s
+      run: |
+        kubectl --kubeconfig kubeconfig.yaml apply -f k8s-deployment.yaml
