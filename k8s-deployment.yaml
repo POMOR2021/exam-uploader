@@ -79,7 +79,7 @@ kind: Secret
 metadata:
   name: s3-secret
 stringData:
-  access: <S3_ACCESS_KEY>
+  access: YCAJEtqBWPdfW1Hbe8gq5wEuV
   secret: <S3_SECRET_KEY>
 ---
 apiVersion: v1
@@ -87,4 +87,4 @@ kind: Secret
 metadata:
   name: db-secret
 stringData:
-  pg-conn: "Host=<PG_HOST>;Port=5432;Database=<PG_DB>;Username=<PG_USER>;Password=<PG_PASS>"
+  pg-conn: "Host=rc1b-eddmf3f5aqdm9cmu.mdb.yandexcloud.net;Port=5432;Database=db1;Username=konuh;Password=IStringStream228"
