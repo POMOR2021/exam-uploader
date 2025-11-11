@@ -51,31 +51,62 @@ jobs:
         curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash -s -- -a
         echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
 
-    - name: Set up Kubeconfig
+    - name: Set up Kubeconfig and YC Config
       run: |
         pip3 install pyyaml
         echo "$KUBE_CONFIG" > kubeconfig.yaml
         python3 << 'EOF'
         import yaml
-        import sys
+        import os
         
+        # Читаем kubeconfig
         with open('kubeconfig.yaml', 'r') as f:
-            config = yaml.safe_load(f)
+            kubeconfig = yaml.safe_load(f)
         
-        if 'users' in config:
-            for user in config['users']:
+        # Извлекаем cloud-id и folder-id из exec args
+        cloud_id = None
+        folder_id = None
+        
+        if 'users' in kubeconfig:
+            for user in kubeconfig['users']:
                 if 'user' in user and 'exec' in user['user']:
                     exec_config = user['user']['exec']
                     if 'command' in exec_config:
                         # Заменяем любой путь к yc.exe на просто yc
                         if 'yc.exe' in exec_config['command'] or 'yc' in exec_config['command']:
                             exec_config['command'] = 'yc'
+                    if 'args' in exec_config:
+                        args = exec_config['args']
+                        for i, arg in enumerate(args):
+                            if arg == '--cloud-id' and i + 1 < len(args):
+                                cloud_id = args[i + 1]
+                            elif arg == '--folder-id' and i + 1 < len(args):
+                                folder_id = args[i + 1]
         
+        # Сохраняем исправленный kubeconfig
         with open('kubeconfig.yaml', 'w') as f:
-            yaml.dump(config, f, default_flow_style=False)
+            yaml.dump(kubeconfig, f, default_flow_style=False)
+        
+        # Создаём конфиг для yc
+        config_dir = f"{os.environ['HOME']}/.config/yandex-cloud"
+        os.makedirs(config_dir, exist_ok=True)
+        
+        config_content = f"token: {os.environ.get('YC_CR_TOKEN', '')}\n"
+        if cloud_id:
+            config_content += f"cloud-id: {cloud_id}\n"
+        if folder_id:
+            config_content += f"folder-id: {folder_id}\n"
+        config_content += "profile: default\n"
+        
+        with open(f"{config_dir}/config.yaml", 'w') as f:
+            f.write(config_content)
+        
+        print(f"Created YC config at {config_dir}/config.yaml")
+        print(f"Cloud ID: {cloud_id}, Folder ID: {folder_id}")
         EOF
+      env:
+        YC_CR_TOKEN: ${{ secrets.YC_CR_TOKEN }}
 
     - name: Deploy to Yandex Cloud K8s
       run: |
-        export YC_TOKEN="${{ secrets.YC_CR_TOKEN }}"
         kubectl --kubeconfig kubeconfig.yaml apply -f k8s-deployment.yaml --validate=false
