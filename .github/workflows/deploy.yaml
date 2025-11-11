@@ -87,19 +87,27 @@ jobs:
         with open('kubeconfig.yaml', 'w') as f:
             yaml.dump(kubeconfig, f, default_flow_style=False)
         
-        # Создаём конфиг для yc
+        # Создаём конфиг для yc с правильной структурой
         config_dir = f"{os.environ['HOME']}/.config/yandex-cloud"
         os.makedirs(config_dir, exist_ok=True)
         
-        config_content = f"token: {os.environ.get('YC_CR_TOKEN', '')}\n"
+        # Правильная структура конфига для yc
+        profile_config = {
+            'token': os.environ.get('YC_CR_TOKEN', '')
+        }
         if cloud_id:
-            config_content += f"cloud-id: {cloud_id}\n"
+            profile_config['cloud-id'] = cloud_id
         if folder_id:
-            config_content += f"folder-id: {folder_id}\n"
-        config_content += "profile: default\n"
+            profile_config['folder-id'] = folder_id
+        
+        config_data = {
+            'profiles': {
+                'default': profile_config
+            }
+        }
         
         with open(f"{config_dir}/config.yaml", 'w') as f:
-            f.write(config_content)
+            yaml.dump(config_data, f, default_flow_style=False)
         
         print(f"Created YC config at {config_dir}/config.yaml")
         print(f"Cloud ID: {cloud_id}, Folder ID: {folder_id}")
