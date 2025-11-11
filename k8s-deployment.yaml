@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: image-uploader
-        image: <YOUR_CR_REGISTRY>/<YOUR_CR_REPO>/image-uploader:latest
+        image: cr.yandex/crpdm7tln34i2pmuhquv/exam-uploader/image-uploader:latest
         ports:
         - containerPort: 8080
         env:
@@ -70,7 +70,7 @@ metadata:
   name: s3-config
 
 data:
-  bucket: <S3_BUCKET_NAME>
+  bucket: exam-backet
   region: ru-central1
   serviceurl: https://storage.yandexcloud.net
 ---
