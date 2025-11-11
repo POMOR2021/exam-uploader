@@ -52,7 +52,11 @@ jobs:
         echo "$HOME/yandex-cloud/bin" >> $GITHUB_PATH
 
     - name: Set up Kubeconfig
-      run: echo "$KUBE_CONFIG" > kubeconfig.yaml
+      run: |
+        echo "$KUBE_CONFIG" > kubeconfig.yaml
+        sed -i 's|C:\\\\Users\\\\[^/]*\\\\yandex-cloud\\\\bin\\\\yc.exe|yc|g' kubeconfig.yaml
+        sed -i 's|C:/Users/[^/]*/yandex-cloud/bin/yc.exe|yc|g' kubeconfig.yaml
+        sed -i 's|command: yc.exe|command: yc|g' kubeconfig.yaml
 
     - name: Deploy to Yandex Cloud K8s
       run: |
